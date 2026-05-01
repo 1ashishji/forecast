@@ -24,7 +24,37 @@ class SalaryInsightsService
   end
 
   def self.advanced_metrics(country)
-    # Placeholder for Step 4.3
-    {}
+    salaries = Employee.where(country: country).pluck(:salary).map(&:to_f).sort
+    count = salaries.size
+    return {} if count == 0
+
+    # Median Calculation
+    median = if count.odd?
+               salaries[count / 2]
+             else
+               (salaries[count / 2 - 1] + salaries[count / 2]) / 2.0
+             end
+
+    # Salary Distribution buckets
+    distribution = {
+      "0-2000" => 0,
+      "2001-4000" => 0,
+      "4001+" => 0
+    }
+
+    salaries.each do |s|
+      if s <= 2000
+        distribution["0-2000"] += 1
+      elsif s <= 4000
+        distribution["2001-4000"] += 1
+      else
+        distribution["4001+"] += 1
+      end
+    end
+
+    {
+      median_salary: median,
+      salary_distribution: distribution
+    }
   end
 end
