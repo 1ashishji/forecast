@@ -8,6 +8,10 @@ gem "rails", "~> 7.1.3"
 # Use mysql as the database for Active Record
 gem "mysql2", "~> 0.5"
 
+# Fast JSON serialization
+gem "oj"
+gem "blueprinter"
+
 # Use the Puma web server [https://github.com/puma/puma]
 gem "puma", ">= 5.0"
 
