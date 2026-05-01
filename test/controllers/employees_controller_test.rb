@@ -54,4 +54,34 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     json_response = JSON.parse(response.body)
     assert_not_nil json_response["salary"]
   end
+
+  test "should list employees with cursor pagination" do
+    Employee.destroy_all
+    # Create 15 employees
+    15.times do |i|
+      Employee.create!(
+        first_name: "Test#{i}",
+        last_name: "User",
+        email: "test#{i}@example.com",
+        job_title: "Developer",
+        country: "USA",
+        salary: 50000
+      )
+    end
+
+    get employees_url, params: { limit: 10 }, as: :json
+    assert_response :success
+    json_response = JSON.parse(response.body)
+
+    assert_equal 10, json_response["employees"].length
+    assert_not_nil json_response["next_cursor"]
+    
+    # Second page
+    get employees_url, params: { limit: 10, cursor: json_response["next_cursor"] }, as: :json
+    assert_response :success
+    json_response2 = JSON.parse(response.body)
+
+    assert_equal 5, json_response2["employees"].length
+    assert_nil json_response2["next_cursor"]
+  end
 end
