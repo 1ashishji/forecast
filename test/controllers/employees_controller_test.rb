@@ -84,4 +84,32 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
     assert_equal 5, json_response2["employees"].length
     assert_nil json_response2["next_cursor"]
   end
+
+  test "should update valid employee" do
+    employee = Employee.create!(@valid_params[:employee])
+    patch employee_url(employee), params: { employee: { first_name: "Updated Name" } }, as: :json
+    assert_response :success
+    
+    employee.reload
+    assert_equal "Updated Name", employee.first_name
+  end
+
+  test "should delete employee" do
+    employee = Employee.create!(@valid_params[:employee])
+    assert_difference("Employee.count", -1) do
+      delete employee_url(employee), as: :json
+    end
+    assert_response :no_content
+  end
+
+  test "should handle non-existing ID" do
+    get employee_url(-1), as: :json
+    assert_response :not_found
+
+    patch employee_url(-1), params: { employee: { first_name: "Updated" } }, as: :json
+    assert_response :not_found
+
+    delete employee_url(-1), as: :json
+    assert_response :not_found
+  end
 end
