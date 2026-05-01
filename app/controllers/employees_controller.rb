@@ -42,6 +42,7 @@ class EmployeesController < ApplicationController
 
   def destroy
     @employee.destroy!
+    head :no_content
   end
 
   private
