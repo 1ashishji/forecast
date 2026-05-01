@@ -2,8 +2,20 @@ class EmployeesController < ApplicationController
   before_action :set_employee, only: %i[ show update destroy ]
 
   def index
-    @employees = Employee.all
-    render json: @employees
+    limit = (params[:limit] || 10).to_i
+    
+    if params[:cursor].present?
+      @employees = Employee.where('id > ?', params[:cursor]).order(:id).limit(limit)
+    else
+      @employees = Employee.order(:id).limit(limit)
+    end
+    
+    next_cursor = @employees.length == limit ? @employees.last.id : nil
+
+    render json: {
+      employees: @employees,
+      next_cursor: next_cursor
+    }
   end
 
   def show
