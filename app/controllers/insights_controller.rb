@@ -5,19 +5,13 @@ class InsightsController < ApplicationController
       return render json: { error: 'Country parameter is required' }, status: :bad_request
     end
 
-    stats = Employee.where(country: country).select(
-      Arel.sql('MIN(salary) as min_salary'),
-      Arel.sql('MAX(salary) as max_salary'),
-      Arel.sql('AVG(salary) as avg_salary'),
-      Arel.sql('COUNT(*) as total_employees')
-    ).first
+    basic_stats = SalaryInsightsService.country_stats(country)
+    advanced_stats = SalaryInsightsService.advanced_metrics(country)
 
     render json: {
       country: country,
-      min_salary: stats.min_salary || 0,
-      max_salary: stats.max_salary || 0,
-      avg_salary: stats.avg_salary || 0,
-      total_employees: stats.total_employees || 0
+      **basic_stats,
+      **advanced_stats
     }
   end
 
@@ -29,12 +23,12 @@ class InsightsController < ApplicationController
       return render json: { error: 'Country and job_title parameters are required' }, status: :bad_request
     end
 
-    avg_salary = Employee.where(country: country, job_title: job_title).average(:salary)
+    stats = SalaryInsightsService.job_title_stats(country, job_title)
 
     render json: {
       country: country,
       job_title: job_title,
-      avg_salary: avg_salary || 0
+      **stats
     }
   end
 end
