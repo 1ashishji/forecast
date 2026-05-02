@@ -26,14 +26,20 @@ const Insights = () => {
 
   const fetchInitialData = async () => {
     try {
-      const res = await axios.get('/api/v1/employees');
-      const emps = res.data.employees || [];
-      const uniqueCountries = [...new Set(emps.map(e => e.country))];
-      const uniqueJobs = [...new Set(emps.map(e => e.job_title))];
+      const [countriesRes, jobsRes] = await Promise.all([
+        axios.get('/api/v1/employees/countries'),
+        axios.get('/api/v1/employees/job_titles')
+      ]);
+
+      const uniqueCountries = countriesRes.data || [];
+      const uniqueJobs = jobsRes.data || [];
+      
       setCountries(uniqueCountries);
       setJobTitles(uniqueJobs);
+      
       if (uniqueCountries.length > 0) setSelectedCountry(uniqueCountries[0]);
       if (uniqueJobs.length > 0) setSelectedJob(uniqueJobs[0]);
+      
       setLoading(false);
     } catch (err) { console.error(err); }
   };
