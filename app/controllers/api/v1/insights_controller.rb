@@ -1,4 +1,6 @@
-class InsightsController < ApplicationController
+module Api
+  module V1
+    class InsightsController < ApplicationController
   def salary_by_country
     country = params[:country]
     if country.blank?
@@ -30,5 +32,7 @@ class InsightsController < ApplicationController
       job_title: job_title,
       **stats
     }
+  end
+    end
   end
 end

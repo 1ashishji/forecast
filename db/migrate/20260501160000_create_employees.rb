@@ -1,5 +1,6 @@
 class CreateEmployees < ActiveRecord::Migration[7.1]
   def change
+    return if table_exists?(:employees)
     create_table :employees do |t|
       t.string :first_name, null: false
       t.string :last_name, null: false

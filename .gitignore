@@ -31,3 +31,10 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# Frontend dependencies
+node_modules/
+frontend/node_modules/
+.eslintcache
+dist/
+.DS_Store

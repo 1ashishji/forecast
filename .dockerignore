@@ -29,3 +29,9 @@
 !/storage/.keep
 /tmp/storage/*
 !/tmp/storage/.keep
+
+# Frontend dependencies
+node_modules/
+frontend/node_modules/
+dist/
+.DS_Store
