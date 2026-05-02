@@ -15,12 +15,20 @@ const Directory = () => {
   const [formData, setFormData] = useState({
     full_name: '', job_title: '', country: '', salary: '', currency: 'USD'
   });
+  const [alert, setAlert] = useState(null); // { type: 'success' | 'error', msg: string }
+
+  useEffect(() => {
+    if (alert) {
+      const timer = setTimeout(() => setAlert(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [alert]);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [cursorHistory, setCursorHistory] = useState([null]); // index = page-1, value = cursor to use
   const [hasMore, setHasMore] = useState(false);
-  const [totalLoaded, setTotalLoaded] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchEmployees = useCallback(async (cursor = null, page = 1) => {
     page === 1 ? setLoading(true) : setPageLoading(true);
@@ -36,6 +44,7 @@ const Directory = () => {
       setEmployees(list);
       setHasMore(more);
       setCurrentPage(page);
+      setTotalCount(res.data.total_count || 0);
 
       // Store next cursor for this page so we can navigate forward
       setCursorHistory(prev => {
@@ -43,9 +52,6 @@ const Directory = () => {
         updated[page] = nextCursor; // page index stores cursor to get page+1
         return updated;
       });
-
-      // Track rough total
-      setTotalLoaded(prev => Math.max(prev, (page - 1) * PAGE_SIZE + list.length + (more ? 1 : 0)));
     } catch (err) {
       console.error('Failed to fetch employees:', err);
     } finally {
@@ -84,20 +90,28 @@ const Directory = () => {
     try {
       if (editingEmployee) {
         await axios.patch(`${API_BASE}/${editingEmployee.id}`, { employee: formData });
+        setAlert({ type: 'success', msg: 'Employee updated successfully!' });
       } else {
         await axios.post(API_BASE, { employee: formData });
+        setAlert({ type: 'success', msg: 'New employee created successfully!' });
       }
       setShowModal(false);
       fetchEmployees(cursorHistory[currentPage - 1], currentPage);
     } catch (err) {
-      alert(JSON.stringify(err.response?.data));
+      const errorMsg = err.response?.data?.errors?.join(', ') || err.response?.data?.error || 'Operation failed';
+      setAlert({ type: 'error', msg: errorMsg });
     }
   };
 
   const handleDelete = async (id) => {
     if (window.confirm('Delete this employee record?')) {
-      await axios.delete(`${API_BASE}/${id}`);
-      fetchEmployees(cursorHistory[currentPage - 1], currentPage);
+      try {
+        await axios.delete(`${API_BASE}/${id}`);
+        setAlert({ type: 'success', msg: 'Employee record deleted.' });
+        fetchEmployees(cursorHistory[currentPage - 1], currentPage);
+      } catch (err) {
+        setAlert({ type: 'error', msg: 'Failed to delete record.' });
+      }
     }
   };
 
@@ -143,14 +157,29 @@ const Directory = () => {
         .page-btn:hover:not(:disabled) { background: var(--primary); color: white; border-color: var(--primary); }
         .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .page-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        .alert-toast {
+          position: fixed; top: 1.5rem; right: 1.5rem; z-index: 1000;
+          padding: 1rem 1.5rem; border-radius: 12px; display: flex; align-items: center; gap: 0.75rem;
+          color: white; font-weight: 600; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+          animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
+
+      {alert && (
+        <div className="alert-toast" style={{ background: alert.type === 'success' ? '#10b981' : '#f43f5e' }}>
+          {alert.type === 'success' ? <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '50%', padding: '2px' }}>✓</div> : <X size={18} />}
+          {alert.msg}
+        </div>
+      )}
 
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
         <div>
           <h1 style={{ fontSize: '1.875rem', fontWeight: 800 }}>Employee Directory</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-            {totalLoaded > 0
-              ? `Showing ${startRecord}–${endRecord} of ${totalLoaded}${hasMore ? '+' : ''} records`
+            {totalCount > 0
+              ? `Showing ${startRecord}–${endRecord} of ${totalCount.toLocaleString()} records`
               : 'Manage your global team'}
           </p>
         </div>
@@ -310,7 +339,7 @@ const Directory = () => {
           </div>
 
           <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-            {startRecord}–{endRecord} of {totalLoaded}{hasMore ? '+' : ''}
+            {startRecord}–{endRecord} of {totalCount.toLocaleString()}
           </div>
         </div>
       </div>

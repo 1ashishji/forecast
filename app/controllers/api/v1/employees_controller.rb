@@ -11,7 +11,11 @@ module Api
           Employee.order(:id).limit(limit)
         
         next_cursor = (@employees.length == limit) ? @employees.last.id : nil
-        render json: { employees: @employees, next_cursor: next_cursor }
+        render json: {
+          employees: @employees,
+          next_cursor: next_cursor,
+          total_count: Employee.count
+        }
       end
 
       # GET /api/v1/employees/countries
