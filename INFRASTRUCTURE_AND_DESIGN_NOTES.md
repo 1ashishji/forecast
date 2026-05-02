@@ -41,4 +41,18 @@ This document outlines the technical approach, trade-offs, and resolutions imple
 ## 4. Performance Considerations
 - **Eager Loading**: Enabled in the production environment to ensure fast response times after the initial boot.
 - **Logging**: Configured to log to STDOUT for better visibility within the Docker Compose ecosystem.
-- **Pagination**: Maintained the cursor-based pagination in `EmployeesController` to ensure the API remains performant even as the employee database grows.
+- **Pagination**: Maintained and documented the cursor-based pagination in `EmployeesController`. This approach is chosen over traditional `OFFSET` to ensure O(1) performance as the dataset grows, providing a seamless "infinite scroll" capability for the frontend.
+
+## 5. Senior-Level Polish & Maintainability
+
+### Global Error Handling
+- **Implementation**: Added standard `rescue_from ActiveRecord::RecordNotFound` handlers in the `Api::V1` base structure.
+- **Benefit**: Ensures the API always returns a consistent, machine-readable JSON error response instead of an HTML 404 page, which is critical for frontend stability.
+
+### Module Namespacing
+- **Approach**: All controllers are strictly nested within `module Api::V1`.
+- **Rationale**: Follows industry-standard versioning patterns, allowing for future `V2` iterations without risking breaking changes to existing endpoints.
+
+### UI/UX Refinement
+- **Cleanup**: Removed the placeholder "Settings" and "Logout" buttons from the `Sidebar`.
+- **Philosophy**: Adheres to the principle of "Less is More"—removing non-functional elements improves user focus and reduces interface clutter.
