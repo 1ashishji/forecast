@@ -26,7 +26,7 @@ const Insights = () => {
 
   const fetchInitialData = async () => {
     try {
-      const res = await axios.get('/api/employees');
+      const res = await axios.get('/api/v1/employees');
       const emps = res.data.employees || [];
       const uniqueCountries = [...new Set(emps.map(e => e.country))];
       const uniqueJobs = [...new Set(emps.map(e => e.job_title))];
@@ -40,21 +40,21 @@ const Insights = () => {
 
   const fetchCountryStats = async (country) => {
     try {
-      const res = await axios.get(`/api/insights/salary_by_country?country=${country}`);
+      const res = await axios.get(`/api/v1/insights/salary_by_country?country=${country}`);
       setCountryStats(res.data);
     } catch (err) { console.error(err); }
   };
 
   const fetchJobStats = async (country, job) => {
     try {
-      const res = await axios.get(`/api/insights/salary_by_job_title_and_country?country=${country}&job_title=${job}`);
+      const res = await axios.get(`/api/v1/insights/salary_by_job_title_and_country?country=${country}&job_title=${job}`);
       setJobStats(res.data);
     } catch (err) { console.error(err); }
   };
 
   if (loading) return <div>Loading insights...</div>;
 
-  const distributionData = countryStats?.salary_distribution ? 
+  const distributionData = countryStats?.salary_distribution ?
     Object.entries(countryStats.salary_distribution).map(([name, value]) => ({ name, value })) : [];
 
   const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e'];
@@ -131,7 +131,7 @@ const Insights = () => {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="name" />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
                   cursor={{ fill: 'var(--bg)' }}
                 />

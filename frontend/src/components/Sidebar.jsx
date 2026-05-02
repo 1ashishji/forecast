@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Users, BarChart3, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Users, BarChart3, LayoutDashboard } from 'lucide-react';
 
 const Sidebar = () => {
   const navItems = [
@@ -53,16 +53,6 @@ const Sidebar = () => {
         ))}
       </nav>
 
-      <div style={{ borderTop: '1px solid #1e293b', paddingTop: '1.5rem', marginTop: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0 1rem', color: '#94a3b8' }}>
-          <Settings size={20} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>Settings</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem', marginTop: '0.5rem', color: '#f87171', cursor: 'pointer' }}>
-          <LogOut size={20} />
-          <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>Logout</span>
-        </div>
-      </div>
     </aside>
   );
 };
