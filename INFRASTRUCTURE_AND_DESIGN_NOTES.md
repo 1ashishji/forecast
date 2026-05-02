@@ -54,5 +54,34 @@ This document outlines the technical approach, trade-offs, and resolutions imple
 - **Rationale**: Follows industry-standard versioning patterns, allowing for future `V2` iterations without risking breaking changes to existing endpoints.
 
 ### UI/UX Refinement
-- **Cleanup**: Removed the placeholder "Settings" and "Logout" buttons from the `Sidebar`.
+
 - **Philosophy**: Adheres to the principle of "Less is More"—removing non-functional elements improves user focus and reduces interface clutter.
+
+## 6. System Architecture
+
+```mermaid
+graph TD
+    Client[React Frontend - Port 5173] -->|API Proxy /api/v1| Web[Rails Web Server - Port 3000]
+    Web -->|Active Record| DB[(MySQL 8 - hr database)]
+    Web -->|Redis Adapter| Redis[(Redis - alpine)]
+    Sidekiq[Sidekiq 8 Workers] -->|Consume| Redis
+    Sidekiq -->|Active Record| DB
+```
+
+## 7. AI Collaboration & Prompt Strategy
+
+To solve the complex `ArgumentError` and dependency conflicts, the following diagnostic prompts were used to guide the analysis:
+
+- **Gem Trace Analysis**: *"Analyze the interaction between Sidekiq 8 and connection_pool. Why would a valid gem configuration return a GemNotFound error in a containerized Ruby 3.2 environment?"*
+- **Boot Crash Debugging**: *"The Rails app crashes during initialization with ArgumentError (given 1, expected 0) in RedisCacheStore. Correlate this with the RAILS_ENV setting and the connection_pool version update."*
+- **Schema Recovery**: *"The employees table already exists but migrations are failing. Propose a non-destructive way to reconcile the schema_migrations table without losing existing data."*
+
+## 8. Engineer's Journey (Lessons Learned)
+
+Stabilizing this environment required a "peeling the onion" approach. Each layer revealed a new complexity:
+1.  **Layer 1**: The build failed (Docker/Gemfile).
+2.  **Layer 2**: The boot failed (Dependency mismatch).
+3.  **Layer 3**: The app crashed (Environment misconfiguration).
+4.  **Layer 4**: The database conflicted (Existing state).
+
+By methodically addressing each layer—fixing the gem constraints, switching to a more stable production environment for Docker, and adding migration guards—we reached a state of **High Availability** for local development.
