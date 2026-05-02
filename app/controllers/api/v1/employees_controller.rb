@@ -20,6 +20,16 @@ module Api
     }
   end
 
+  # GET /api/v1/employees/countries
+  def countries
+    render json: Employee.distinct.pluck(:country).sort
+  end
+
+  # GET /api/v1/employees/job_titles
+  def job_titles
+    render json: Employee.distinct.pluck(:job_title).sort
+  end
+
   def show
     render json: @employee
   end

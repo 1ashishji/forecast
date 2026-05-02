@@ -2,7 +2,7 @@ puts "Loading name files..."
 first_names = File.readlines(Rails.root.join('db', 'first_names.txt')).map(&:strip)
 last_names = File.readlines(Rails.root.join('db', 'last_names.txt')).map(&:strip)
 
-countries = ["USA", "UK", "Canada", "Germany", "India", "Australia", "Japan", "France", "Brazil", "South Africa"]
+countries = ["USA", "GB", "CA", "DE", "IN", "AU", "JP", "FR", "BR", "ZA", "SG", "MY", "ID", "PH", "VN", "TH", "KR", "CN", "AE", "SA", "EG", "NG", "KE", "GH", "ES", "IT", "NL", "SE", "NO", "FI", "DK", "CH", "AT", "BE", "IE", "NZ"]
 job_titles = ["Software Engineer", "Senior Developer", "Product Manager", "Data Scientist", "UI/UX Designer", "DevOps Engineer", "Project Manager", "Sales Executive", "Marketing Specialist", "Human Resources"]
 
 puts "Cleaning up existing employees..."
