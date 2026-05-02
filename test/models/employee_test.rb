@@ -3,9 +3,7 @@ require "test_helper"
 class EmployeeTest < ActiveSupport::TestCase
   def setup
     @employee = Employee.new(
-      first_name: "John",
-      last_name: "Doe",
-      email: "john.doe@example.com",
+      full_name: "John Doe",
       job_title: "Software Engineer",
       country: "USA",
       salary: 100000.0
@@ -16,16 +14,10 @@ class EmployeeTest < ActiveSupport::TestCase
     assert @employee.valid?
   end
 
-  test "should be invalid without first_name" do
-    @employee.first_name = nil
+  test "should be invalid without full_name" do
+    @employee.full_name = nil
     assert_not @employee.valid?
-    assert_includes @employee.errors[:first_name], "can't be blank"
-  end
-
-  test "should be invalid without last_name" do
-    @employee.last_name = nil
-    assert_not @employee.valid?
-    assert_includes @employee.errors[:last_name], "can't be blank"
+    assert_includes @employee.errors[:full_name], "can't be blank"
   end
 
   test "should be invalid without job_title" do
@@ -50,12 +42,5 @@ class EmployeeTest < ActiveSupport::TestCase
     @employee.salary = -100
     assert_not @employee.valid?
     assert_includes @employee.errors[:salary], "must be greater than or equal to 0"
-  end
-
-  test "email must be unique" do
-    @employee.save!
-    duplicate_employee = @employee.dup
-    assert_not duplicate_employee.valid?
-    assert_includes duplicate_employee.errors[:email], "has already been taken"
   end
 end

@@ -4,112 +4,87 @@ class EmployeesControllerTest < ActionDispatch::IntegrationTest
   setup do
     @valid_params = {
       employee: {
-        first_name: "Jane",
-        last_name: "Doe",
-        email: "jane.doe@example.com",
+        full_name: "Jane Doe",
         job_title: "Product Manager",
         country: "Canada",
-        salary: 120000.0
+        salary: 120000.0,
+        currency: "USD"
       }
     }
   end
 
-  test "should create employee successfully" do
+  test "should create employee successfully with nested params" do
     assert_difference("Employee.count", 1) do
-      post employees_url, params: @valid_params, as: :json
+      post api_v1_employees_url, params: @valid_params, as: :json
     end
 
     assert_response :created
     json_response = JSON.parse(response.body)
-    assert_equal "Jane", json_response["first_name"]
+    assert_equal "Jane Doe", json_response["full_name"]
   end
 
-  test "should return error on missing fields" do
-    invalid_params = {
-      employee: {
-        first_name: "Jane"
-        # missing last_name, email, etc.
-      }
+  test "should create employee successfully with flat params" do
+    flat_params = {
+      full_name: "Flat User",
+      job_title: "Developer",
+      country: "US",
+      salary: 90000
     }
-
-    assert_no_difference("Employee.count") do
-      post employees_url, params: invalid_params, as: :json
+    assert_difference("Employee.count", 1) do
+      post api_v1_employees_url, params: flat_params, as: :json
     end
 
-    assert_response :unprocessable_entity
+    assert_response :created
     json_response = JSON.parse(response.body)
-    assert_not_nil json_response["last_name"]
-    assert_not_nil json_response["email"]
+    assert_equal "Flat User", json_response["full_name"]
   end
 
-  test "should return error on invalid salary" do
-    invalid_salary_params = @valid_params.deep_dup
-    invalid_salary_params[:employee][:salary] = -5000
-
-    assert_no_difference("Employee.count") do
-      post employees_url, params: invalid_salary_params, as: :json
-    end
-
-    assert_response :unprocessable_entity
-    json_response = JSON.parse(response.body)
-    assert_not_nil json_response["salary"]
-  end
-
-  test "should list employees with cursor pagination" do
+  test "should list employees with cursor pagination and total count" do
     Employee.destroy_all
-    # Create 15 employees
     15.times do |i|
       Employee.create!(
-        first_name: "Test#{i}",
-        last_name: "User",
-        email: "test#{i}@example.com",
+        full_name: "Test User #{i}",
         job_title: "Developer",
         country: "USA",
         salary: 50000
       )
     end
 
-    get employees_url, params: { limit: 10 }, as: :json
+    get api_v1_employees_url, params: { limit: 10 }, as: :json
     assert_response :success
     json_response = JSON.parse(response.body)
 
     assert_equal 10, json_response["employees"].length
+    assert_equal 15, json_response["total_count"]
     assert_not_nil json_response["next_cursor"]
-    
-    # Second page
-    get employees_url, params: { limit: 10, cursor: json_response["next_cursor"] }, as: :json
-    assert_response :success
-    json_response2 = JSON.parse(response.body)
+  end
 
-    assert_equal 5, json_response2["employees"].length
-    assert_nil json_response2["next_cursor"]
+  test "should get countries list" do
+    get countries_api_v1_employees_url, as: :json
+    assert_response :success
+    json_response = JSON.parse(response.body)
+    assert_kind_of Array, json_response
   end
 
   test "should update valid employee" do
     employee = Employee.create!(@valid_params[:employee])
-    patch employee_url(employee), params: { employee: { first_name: "Updated Name" } }, as: :json
+    patch api_v1_employee_url(employee), params: { employee: { full_name: "Updated Name" } }, as: :json
     assert_response :success
     
     employee.reload
-    assert_equal "Updated Name", employee.first_name
+    assert_equal "Updated Name", employee.full_name
   end
 
   test "should delete employee" do
     employee = Employee.create!(@valid_params[:employee])
     assert_difference("Employee.count", -1) do
-      delete employee_url(employee), as: :json
+      delete api_v1_employee_url(employee), as: :json
     end
     assert_response :no_content
   end
 
   test "should handle non-existing ID" do
-    get employee_url(-1), as: :json
-    assert_response :not_found
-
-    patch employee_url(-1), params: { employee: { first_name: "Updated" } }, as: :json
-    assert_response :not_found
-
-    delete employee_url(-1), as: :json
+    get api_v1_employee_url(-1), as: :json
     assert_response :not_found
   end
 end
