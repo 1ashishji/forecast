@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    allowedHosts: ['giggly-rummage-wanted.ngrok-free.dev'],
     proxy: {
       '/api': {
         target: 'http://web:3000',
