@@ -1,110 +1,159 @@
-# Incubytes Employee Portal — Production-Ready (TDD-Based)
 
-A scalable, production-grade employee management system built with **Ruby on Rails 7 (API)** and **React (Vite)**.
+A Rails 7 API implementation for a weather-forecast assignment that emphasizes architecture, caching, testability, and production readiness rather than only fetching temperature data.
 
-Designed with **Test-Driven Development (TDD)**, clean architecture, and performance in mind, this system handles **10,000+ records with consistent performance and low query overhead**.
 
----
+The API accepts a street address, resolves it to coordinates plus ZIP code, checks a ZIP-based cache, fetches forecast data from Open-Meteo when necessary, and returns a normalized JSON payload that clearly indicates whether the response came from cache or a live API call.
 
-## 💡 Why This Project Stands Out
+## Architecture
 
-- **Scalable Performance**: Handles large datasets (10,000+) efficiently using keyset pagination.
-- **Reliability First**: Built with a strict TDD workflow to ensure zero-regression and long-term maintainability.
-- **Clean Architecture**: Follows senior-grade design patterns for clear separation of concerns.
-- **Production Mindset**: Fully Dockerized and designed for production-readiness with scalable services and background processing.
-
----
-
-## ⚡ Quick Start (Docker)
-
-Make sure [Docker](https://www.docker.com/) is installed, then:
-
-```bash
-# 1. Navigate to backend
-cd backend/
-
-# 2. Build and start services
-sudo docker-compose up --build
-
-# 3. Setup database
-sudo docker-compose exec web bin/rails db:prepare
+```text
+app/
+├── controllers/
+│   └── forecasts_controller.rb
+├── models/
+│   └── forecast.rb
+├── presenters/
+│   └── forecast_presenter.rb
+├── repositories/
+│   └── cache_repository.rb
+└── services/
+    ├── forecast_retriever.rb
+    ├── geocoding_service.rb
+    └── weather_service.rb
 ```
 
-## 🌐 Access Points
-- **Frontend**: [http://localhost:5173](http://localhost:5173)
-- **API**: [http://localhost:3000/api/v1/employees](http://localhost:3000/api/v1/employees)
+## Request Flow
 
----
-
-## 🧪 Test-Driven Development (TDD)
-
-This project demonstrates strong TDD discipline through **20+ incremental commits**, each following a strict logical progression:
-1. **Write failing test** ❌ (Define behavior)
-2. **Implement minimal code** ✅ (Pass behavior)
-3. **Refactor** 🔁 (Optimize & clean)
-
-Each commit represents a single logical step in the application's evolution, ensuring a robust and well-audited codebase.
-
-**Run tests:**
-```bash
-sudo docker-compose exec web bin/rails test
+```text
+Address Input
+      ↓
+GeocodingService
+      ↓
+ZIP Code + Coordinates
+      ↓
+CacheRepository
+      ↓
+Cached?
+ ┌────┴─────┐
+Yes        No
+ ↓          ↓
+Return    WeatherService
+            ↓
+       Open-Meteo API
+            ↓
+       Cache for 30m
+            ↓
+      ForecastPresenter
 ```
 
----
+## API Integrations
 
-## 🏗️ Architecture Overview
+### Weather Provider
 
-### 🔹 Backend (Rails 7 API)
-- **Namespaced API**: `/api/v1` for versioning and client stability.
-- **Cursor-based Pagination**: Ensures O(1) database performance at any scale.
-- **Service-Based Architecture**: Business logic (like promotions) isolated in `app/services/` for clean code separation.
-- **Production-Ready**: Integrated with MySQL 8, Redis, and Sidekiq for high-performance background tasks.
+The weather layer uses Open-Meteo forecast data.
 
-### 🔹 Frontend (React + Vite)
-- **Modern UI**: Responsive dashboard with real-time feedback.
-- **Toast Notifications**: Professional-grade state management for CRUD actions.
-- **Live Tracking**: Accurate record metrics (e.g., "Showing 1–20 of 10,000").
+Example endpoint:
 
----
-
-## 📊 High-Scale Data Testing
-
-To simulate production-scale usage and verify performance:
-```bash
-sudo docker-compose exec web bin/rails db:seed
-```
-- ✅ Generates **10,000+** records.
-- ✅ Verified for consistent performance and low query overhead.
-
----
-
-## ⚠️ Troubleshooting
-
-**Containers not starting:**
-```bash
-sudo docker-compose down --remove-orphans
-sudo docker-compose up --build
+```text
+https://api.open-meteo.com/v1/forecast?latitude=52.52&longitude=13.41&current=temperature_2m,wind_speed_10m&hourly=temperature_2m,relative_humidity_2m,wind_speed_10m
 ```
 
-**Database connectivity:**
-Ensure your `.env` is configured with `host: db` for Docker networking.
+The implementation requests:
 
----
+- `current.temperature_2m`
+- `current.weather_code`
+- `daily.temperature_2m_max`
+- `daily.temperature_2m_min`
+- `daily.weather_code`
 
-## ✅ Summary
+### Geocoding Provider
 
-This project demonstrates:
-- **Strong TDD Discipline**: Every feature is backed by a verified test.
-- **Scalable Backend Architecture**: Designed to grow with your data.
-- **Clean and Maintainable Code**: High readability and modular design.
-- **Production-Ready Setup**: One-command deployment via Docker.
+The geocoding layer is intentionally isolated behind `GeocodingService` so the provider can be swapped without impacting controller or cache logic. The current implementation uses a no-key HTTP geocoding endpoint and normalizes ZIP code, latitude, longitude, city, state, and country.
 
-### 🧠 Final Verdict
-| Area | Score |
-| :--- | :--- |
-| **Clarity** | 9.5/10 |
-| **Professionalism** | 9.5/10 |
-| **Production Readiness** | 9.5/10 |
+## Caching Strategy
 
----
-*Developed with a senior engineering mindset for the Incubytes challenge.*
+- Cache key: `forecast:<zip_code>`
+- TTL: `30.minutes`
+- Scope: ZIP-code level cache, matching the assignment requirement
+- Source marker: response includes `source: "cache"` or `source: "live_api"`
+
+## Endpoint
+
+### `POST /forecast`
+
+Params:
+
+```json
+{
+  "address": "1 Apple Park Way, Cupertino, CA"
+}
+```
+
+Example response:
+
+```json
+{
+  "zip_code": "95014",
+  "location_name": "Cupertino, California, United States",
+  "source": "live_api",
+  "current": {
+    "temperature": 72.4,
+    "high_temperature": 78.0,
+    "low_temperature": 61.0,
+    "condition": "Mainly clear",
+    "weather_code": 1
+  },
+  "daily_forecast": [
+    {
+      "date": "2026-06-22",
+      "high_temperature": 78.0,
+      "low_temperature": 61.0,
+      "condition": "Mainly clear",
+      "weather_code": 1
+    }
+  ],
+  "fetched_at": "2026-06-22T09:00:00Z"
+}
+```
+
+## Testing
+
+RSpec coverage has been added around:
+
+- weather response mapping
+- geocoding normalization
+- ZIP-cache behavior
+- orchestration in `ForecastRetriever`
+- presenter serialization
+- request contract for `POST /forecast`
+
+Recommended commands after installing gems:
+
+```bash
+bundle install
+bundle exec rspec
+```
+
+## Design Decisions
+
+- Service-object orchestration keeps controller code thin.
+- Dependency injection for HTTP clients makes service specs deterministic.
+- A presenter isolates the public API shape from provider payloads.
+- A repository isolates caching concerns and TTL policy.
+- Forecast data is represented as a PORO rather than an Active Record model because it is transient external data.
+
+## Production Readiness
+
+- Cache layer can be moved from memory store to Redis without changing callers.
+- Geocoding and weather providers are abstracted and swappable.
+- Provider failures return explicit API errors instead of leaking low-level exceptions.
+- The request contract is stable even if upstream provider payloads evolve.
+- The 5-day forecast structure supports future UI or background warming jobs.
+
+## Future Improvements
+
+- Replace the simple HTTP client lambda with Faraday middleware for retries and observability.
+- Add rate-limit backoff and circuit-breaker behavior around external APIs.
+- Add VCR or WebMock-backed contract tests for provider integrations.
+- Introduce structured logging and request correlation IDs.
+- Add a background job to pre-warm popular ZIP-code forecasts.
